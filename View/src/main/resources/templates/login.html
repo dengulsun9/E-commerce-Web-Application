@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="Cache-Control" content="no-store">
+	<meta http-equiv="Pragma" content="no-cache">
+	<title>Login and Registration</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			background-color: #fafafa;
+			margin: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			height: 100vh;
+		}
+
+		.container {
+			background-color: #fff;
+			padding: 20px;
+			border-radius: 5px;
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+			width: 300px;
+			text-align: center;
+		}
+
+		h2 {
+			color: #333;
+		}
+
+		input {
+			width: 100%;
+			padding: 10px;
+			margin-bottom: 15px;
+			box-sizing: border-box;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+		}
+
+		button {
+			background-color: #3897f0;
+			color: #fff;
+			padding: 10px 20px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 14px;
+		}
+
+		.register-link {
+			margin-top: 10px;
+			color: #3897f0;
+			text-decoration: none;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<h2>Login</h2>
+		<form th:action="@{/getLogin}" th:object="${loginData}" method="post">
+			<input type="text" name="username" placeholder="Username" th:field="*{username}" required>
+			<input type="password" name="password" placeholder="Password" th:field="*{password}" required>
+			<button type="submit">Login</button>
+		</form>
+		<p>Don't have an account? <a href="/register" class="register-link">Register</a></p>
+	</div>
+</body>
+
+</html>

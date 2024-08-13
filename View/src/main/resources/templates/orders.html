@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>User Orders</title>
+    <meta http-equiv="Cache-Control" content="no-store">
+<meta http-equiv="Pragma" content="no-cache">
+    <style>
+		header, footer {
+		  background-color: #333;
+		  color: #fff;
+		  text-align: center;
+		  padding: 1em 0;
+		}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        .no-border {
+			    border: none; /* Remove borders on cells with class "no-border" */
+			    border-bottom: 1px solid black;
+			}
+        button {
+			  padding: 10px 20px;
+			  cursor: pointer;
+			  border: none;
+			  border-radius: 5px;
+			  transition: background-color 0.3s;
+			}
+
+button:hover {
+  background-color: #555;
+}
+
+.order-now {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.add-to-cart {
+  background-color: #28a745;
+  color: #fff;
+}
+.add-to-cart2 {
+  background-color: rgb(255, 0, 0);
+  color: #fff;
+}
+.button-container {
+    text-align: center; /* Center aligns the buttons initially */
+}
+
+.left-button {
+    float: left;
+    background-color: rgb(255, 0, 0);
+  	color: #fff;
+
+}
+
+.right-button {
+    float: right; /* Floats the right button to the right */
+    background-color: #28a745;
+  	color: #fff;
+}
+.center-button {
+	float:center;
+	background-color: rgb(120, 228, 207);
+  	color: #fff;
+}
+    </style>
+</head>
+<body>
+		<header>
+			<a href="/getallproducts"><button class="center-button">Home</button></a>					 
+			<a href="/getorder"><button class="center-button">Orders</button></a>					 
+			<a href="/profile"><button class="center-button">Profile</button></a>					 
+
+			<h1 th:text="${UserName}+' \'s'"></h1>
+	    	<h1>Orders</h1>
+	    	<div class="button-container">
+			    <a href="/getallproducts"><button class="left-button">Back</button></a>
+
+			   	<a href="/getcart"><button class="right-button">Cart</button></a> 
+			</div>	
+	  </header>
+	
+    <h2> Orders</h2>
+    <table>
+        <thead>
+            <tr>
+				<th>Order ID</th>
+				<th>Image</th>
+				<th>Product Name</th>
+				<th>Quantity</th>
+				<th>Total Price</th>
+				<th>Address</th>
+				<th>Order Date</th>
+				<th>Expected Shipping Date</th>
+				<th>Expected Delivery Date</th>
+				<th>Order Status</th>
+				<th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="ord : ${order}">
+				<td th:text="${ord.orderId}"></td>
+				<td ><img th:src="@{${ord.productImage}}" width="300" height="300"> </td>
+				<td th:text="${ord.productName}"></td>
+                <td th:text="${ord.orderQuantity}"></td>
+                <td th:text="${ord.totalPrice}"></td>
+                <td th:text="${ord.shippingAddress}"></td>
+                <td th:text="${ord.dateTime}"></td>
+                <td th:text="${ord.shippingDate}"></td>
+                <td th:text="${ord.deliveryDate}"></td>
+                <td><button class="add-to-cart" th:text="${ord.orderStatus}"></button></td>
+   				<td>
+					 <form th:action="@{'/updatestatus/' + ${ord.orderId}}" method="post">
+						 <button  type="submit" class="add-to-cart2">Cancel</button>
+					 </form>
+				</td>
+             
+            </tr>
+        </tbody>
+    </table>
+    <br><br>
+    <div >
+		
+	</div>
+	
+	 <footer>
+    <p>&copy; 2024 Orders Page</p>
+  </footer>
+    
+</body>
+</html>

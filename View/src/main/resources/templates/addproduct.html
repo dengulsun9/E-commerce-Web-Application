@@ -1,0 +1,76 @@
+
+	<!DOCTYPE html>
+	<html xmlns:th="http://www.thymeleaf.org">
+	<head>
+	    <meta charset="UTF-8">
+	    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	    <meta http-equiv="Cache-Control" content="no-store">
+		<meta http-equiv="Pragma" content="no-cache">
+	    <title>Add product</title>
+	    <style>
+	        body {
+	            font-family: Arial, sans-serif;
+	            background-color: #fafafa;
+	            margin: 0;
+	            display: flex;
+	            align-items: center;
+	            justify-content: center;
+	            height: 100vh;
+	        }
+
+	        .container {
+	            background-color: #fff;
+	            padding: 20px;
+	            border-radius: 5px;
+	            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+	            width: 300px;
+	            text-align: center;
+	        }
+
+	        h2 {
+	            color: #333;
+	        }
+
+	        input {
+	            width: 100%;
+	            padding: 10px;
+	            margin-bottom: 15px;
+	            box-sizing: border-box;
+	            border: 1px solid #ccc;
+	            border-radius: 4px;
+	        }
+
+	        button {
+	            background-color: #3897f0;
+	            color: #fff;
+	            padding: 10px 20px;
+	            border: none;
+	            border-radius: 5px;
+	            cursor: pointer;
+	            font-size: 14px;
+	        }
+
+	        .login-link {
+	            margin-top: 10px;
+	            color: #3897f0;
+	            text-decoration: none;
+	        }
+	    </style>
+	</head>
+	<body>
+	    <div class="container">
+	        <h2>Add Product</h2>
+	        <form th:action="@{/addproductpost}" th:object="${product}" method="post">
+	            <input type="text" name="productname" placeholder="Product Name" th:field="*{productName}" required>
+	            <input type="text" name="Description" placeholder="Description" th:field="*{productDesc}" required>
+	            <input type="number" name="quantity" placeholder="Quantity In Stock" th:field="*{net_quantity_instock}" required>
+	            <input type="text" name="color" placeholder="color" th:field="*{color}" required>
+	            <input type="text" name="path" placeholder="Image Name" th:field="*{imagepath}" required>
+	            <input type="number" name="price" placeholder="Price" th:field="*{price}" required>
+
+	            <button type="submit">Add</button>
+	        </form>
+	        <p><a href="/login" class="login-link">Back To Home </a></p>
+	    </div>
+	</body>
+	</html>

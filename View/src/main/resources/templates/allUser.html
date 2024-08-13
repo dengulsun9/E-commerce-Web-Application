@@ -1,0 +1,53 @@
+
+	<!DOCTYPE html>
+	<html xmlns:th="http://www.thymeleaf.org">
+	<head>
+	    <title>User Table</title>
+	    <meta http-equiv="Cache-Control" content="no-store">
+	<meta http-equiv="Pragma" content="no-cache">
+	    <style>
+	        table {
+	            width: 100%;
+	            border-collapse: collapse;
+	        }
+	        th, td {
+	            border: 1px solid black;
+	            padding: 8px;
+	            text-align: left;
+	        }
+	    </style>
+	</head>
+	<body>
+	    <h2>User Table</h2>
+	    <table>
+	        <thead>
+	            <tr>
+					<th>ID</th>
+	                <th>Username</th>
+	                <th>Password</th>
+	                <th>Address</th>
+	                <th>City</th>
+	                <th>Pincode</th>
+	                <th>Delete</th>
+	                <th>Update</th>
+	            </tr>
+	        </thead>
+	        <tbody>
+	            <tr th:each="user : ${logData}">
+					<td th:text="${user.user_Id}"></td>
+	                <td th:text="${user.username}"></td>
+	                <td th:text="${user.password}"></td>
+	                <td th:text="${user.address}"></td>
+	                <td th:text="${user.city}"></td>
+	                <td th:text="${user.pincode}"></td>
+	                <td> <form th:action="@{'/user/' + ${user.user_Id}}" method="post">
+	                        <input type="hidden" name="_method" value="delete">
+	                        <input type="hidden" name="id" th:value="${user.user_Id}">
+	                        <button type="submit">Delete</button>
+	                    </form></td>
+	                    <td><a th:href="@{'/user/edit/' + ${user.user_Id}}">Edit</a></td>
+	            </tr>
+	        </tbody>
+	    </table>
+	</body>
+	</html>

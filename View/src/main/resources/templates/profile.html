@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<meta http-equiv="Cache-Control" content="no-store">
+<meta http-equiv="Pragma" content="no-cache">
+<title>User Profile</title>
+<style>
+    
+    header, footer {
+  background-color: #333;
+  color: rgb(255, 255, 255);
+  text-align: center;
+  padding: 1em 0;
+}
+ .container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-info {
+        margin-bottom: 20px;
+    }
+
+    .profile-info label {
+        font-weight: bold;
+    }
+
+    .profile-info p {
+        margin: 5px 0;
+    }
+    button {
+  padding: 10px 20px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #555;
+}
+ .center-button {
+	float:center;
+	background-color: rgb(120, 228, 207);
+  	color: #fff;
+}
+
+.add-to-cart {
+  background-color: rgb(255, 0, 0);
+  color: #fff;
+}
+</style>
+</head>
+<body>
+<header>
+    <a href="/getallproducts"><button class="center-button">Home</button></a>					 
+	<a href="/getorder"><button class="center-button">Orders</button></a>					 
+	<a href="/profile"><button class="center-button">Profile</button></a>					 
+    <h1>Profile Page</h1>
+    <div style="text-align: right;">
+    <a href="/logout" ><button type="submit" class="add-to-cart">Logout</button></a>
+</div>
+</header>
+<div class="container" th:object="${user}">
+    <h2>User Profile</h2>
+     <div class="profile-info" >
+        <label for="userid">User ID:</label>
+        <h2 id="userid" th:text="${user.user_Id}"></h2>
+    </div>
+    <div class="profile-info">
+        <label for="username">Username:</label>
+        <h2 id="username" th:text="${user.username}"></h2>
+    </div>
+    <div class="profile-info">
+        <label for="address">Address:</label>
+        <h2 id="address" th:text="${user.address}"></h2>
+    </div>
+   
+</div>
+<footer>
+    <p>&copy; 2024 Profile Page</p>
+  </footer>
+</body>
+</html>
