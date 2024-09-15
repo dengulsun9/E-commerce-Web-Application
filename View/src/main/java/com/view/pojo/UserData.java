@@ -13,5 +13,7 @@ public class UserData {
 	private String address;
 	private String city;
 	private Integer pincode;
+	private String state;
+	private String country;
 	
 }

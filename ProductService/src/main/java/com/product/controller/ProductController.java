@@ -36,10 +36,15 @@ public class ProductController {
 		return allp;
 	}
 	
+	
+	
+	
 	@GetMapping("/getProduct/{productId}")
 	public Optional<Product> getProduct(@PathVariable Long productId)
 	{
-		return repo.findById(productId);
+		
+		return repo.findById(productId);  
+		 
 	}
 	
 	
@@ -63,6 +68,8 @@ public class ProductController {
 			product2.setDiscount_applied(product.isDiscount_applied());
 			product2.setNet_quantity_instock(product.getNet_quantity_instock());
 			product2.setPrice(product.getPrice());
+			product2.setStates(product.getStates());
+			product2.setCategory(product.getCategory());
 			repo.save(product2);
 			return ResponseEntity.ofNullable("Update Successfull");
 		}
@@ -85,7 +92,16 @@ public class ProductController {
 	@GetMapping("/getname/{productId}")
 	public String getProductName(@PathVariable Long productId)
 	{
-		return repo.findById(productId).get().getProductName();
+		String productName = repo.findById(productId).get().getProductName();
+		System.out.println(productName);
+		return productName;
+		//return repo.findById(productId).get().getProductName();
+	}
+	
+	@GetMapping("/getstates/{productId}")
+	public List<String> getProductStates(@PathVariable Long productId)
+	{
+		return repo.findById(productId).get().getStates();
 	}
 	
 	@GetMapping("/getdesc/{productId}")
@@ -100,6 +116,9 @@ public class ProductController {
 	{
 		return repo.findById(productId).get().getImagepath();
 	}
+	
+	
+	
 	
 	
 }

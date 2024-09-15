@@ -57,6 +57,7 @@ public class UserCartController {
 				qun=0;
 			
 			usercart.setQuantity(qun);
+			usercart.setGst(cart.getGst());
 			usercart.setTotal(qun * usercart.getPrice());
 			repo.save(usercart);
 			

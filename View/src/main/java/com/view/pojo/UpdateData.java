@@ -8,5 +8,7 @@ public class UpdateData {
 	private Long user_id;
 	private String address,city;
 	private Integer pincode;
+	private String state;
+	private String country;
 	
 }

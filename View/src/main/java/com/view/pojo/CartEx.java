@@ -11,6 +11,7 @@ public class CartEx {
 	private Long productId;
 	private Integer quantity;
 	private Double price; 
+	private Double gst;
 	private Double total;
 	private String productName,productDesc,imagePath;
 }

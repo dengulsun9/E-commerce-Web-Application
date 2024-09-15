@@ -102,6 +102,7 @@
 	                
 	                <th>Remove</th>
 	                <th>Price</th>
+					<th>GST</th>
 	                <th>Total</th>
 	            </tr>
 	        </thead>
@@ -123,7 +124,8 @@
 						 </form>
 					</td>
 	             	<td th:text="${cart.price}"></td>
-	             	<td th:text="${cart.total}"></tdth>
+					<td th:text="${cart.gst}"></td> 
+				    <td th:text="${cart.total}"></td>
 	             
 	            </tr>
 	        </tbody>

@@ -49,6 +49,16 @@ public class OrderController {
 		}
 	}
 	
+	@DeleteMapping("/DeleteAllOrders")
+	public ResponseEntity<String> removeAllOrders()
+	{
+
+		repo.deleteAll();
+
+		return ResponseEntity.ok("All Orders Removed Successfully");
+
+	}
+	
 	@GetMapping("/order/{orderId}")
 	public Optional<Order1> getOrder(@PathVariable Long orderId)
 	{

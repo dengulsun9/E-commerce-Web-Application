@@ -1,5 +1,7 @@
 package com.product.entity;
 
+import java.util.List;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,7 +19,9 @@ public class Product {
 	private String productDesc;
 	private Integer net_quantity_instock;
 	private String color;
+	private String category;
 	private Double price;
+	private List<String> states;
 	private boolean discount_applied;
 	private String imagepath;
 	

@@ -188,22 +188,121 @@ public class MicroController {
 		}
 	}
 	
+	
+	private double getGstRateForCategory(String category) {
+		double gstRate;
+		switch (category) {
+		case "Electronics": {
+			gstRate = 0.18;
+			break;
+		}
+		case "Clothing": {
+			gstRate = 0.12;
+			break;
+		}
+		case "Vehicle": {
+			gstRate = 0.20;
+			break;
+		}
+		default: {
+			gstRate = 0.05;
+			break;
+		}
+		}
+		return gstRate;
+	}
+	
 	@PostMapping("/addtocart/{productId}/{quantity}/{price}")
-	public String addToCart(@PathVariable Long productId,@PathVariable Integer quantity,@PathVariable Double price)
+	public String addToCart(@PathVariable Long productId,@PathVariable Integer quantity,@PathVariable Double price,Model model)
 	{
-		CartEx cartex=new CartEx();
-		cartex.setProductId(productId);
-		cartex.setQuantity(quantity);
-		cartex.setUserId((Long) session.getAttribute("userId"));
-		cartex.setPrice(price);
-		cartex.setTotal(price);
-		cartex.setImagePath(rt.getForEntity("http://localhost:8082/getimage/"+productId, String.class).getBody());
-		cartex.setProductName(rt.getForEntity("http://localhost:8082/getname/"+productId, String.class).getBody());
-		cartex.setProductDesc(rt.getForEntity("http://localhost:8082/getdesc/"+productId, String.class).getBody());
-		rt.postForEntity("http://localhost:8081/addtocart", cartex, String.class);
-		return "redirect:/getallproducts";
+		Long userId=(Long)session.getAttribute("userId");
+		User user = rt.getForObject("http://localhost:8081/getbyid/"+userId, User.class);
+		String userState = user.getState();
+		
+		Product2 product = rt.getForObject("http://localhost:8082/getProduct/"+productId, Product2.class);
+		List<String> productStates = product.getStates();
+		
+		if(productStates.contains(userState))
+		{
+			CartEx cartex=new CartEx();
+			cartex.setProductId(productId);
+			cartex.setQuantity(quantity);
+			cartex.setUserId(userId);
+			double gstRateForCategory = getGstRateForCategory(product.getCategory());
+			double gstAmount = product.getPrice() * gstRateForCategory;
+			product.setGst(gstAmount);
+			double totalPrice = price + product.getGst();
+			cartex.setPrice(price);
+			cartex.setGst(product.getGst());
+			cartex.setTotal(totalPrice);
+			cartex.setImagePath(rt.getForEntity("http://localhost:8082/getimage/"+productId, String.class).getBody());
+			cartex.setProductName(rt.getForEntity("http://localhost:8082/getname/"+productId, String.class).getBody());
+			cartex.setProductDesc(rt.getForEntity("http://localhost:8082/getdesc/"+productId, String.class).getBody());
+			rt.postForEntity("http://localhost:8081/addtocart", cartex, String.class);
+			 Product2[] products = rt.getForObject("http://localhost:8082/getProducts2", Product2[].class);
+		      model.addAttribute("products", products);
+		      model.addAttribute("successMessage", "Product added to cart successfully.");
+		}
+		else
+		{
+			 Product2[] products = rt.getForObject("http://localhost:8082/getProducts2", Product2[].class);
+		        model.addAttribute("products", products);
+		        model.addAttribute("errorMessage", "Product not available in your state.");
+		}
+		return "products";
 		
 	}
+	
+	
+	@PostMapping("/placeorder/{productId}/{quantity}/{price}")
+	public String placeOrder(@PathVariable Long productId, @PathVariable Integer quantity, @PathVariable Double price, Model model) {
+	    Long userId = (Long) session.getAttribute("userId");
+	    if (userId == null) {
+	        model.addAttribute("errorMessage", "User not logged in.");
+	        return "redirect:/getallproducts";
+	    }
+
+	    
+	    User user = rt.getForObject("http://localhost:8081/getbyid/" + userId, User.class);
+	    Product2 product = rt.getForObject("http://localhost:8082/getProduct/" + productId, Product2.class);
+
+	 
+	    String userState = user.getState();
+	    List<String> productStates = product.getStates();
+
+	    if (!productStates.contains(userState)) {
+	        model.addAttribute("errorMessage", "Product not available in your state.");
+	        return "redirect:/getallproducts";
+	    }
+
+	 
+	    OrderSe order = new OrderSe();
+	    order.setDateTime(LocalDate.now().toString());
+	    order.setShippingDate(LocalDate.now().plusDays(2).toString());
+	    order.setDeliveryDate(LocalDate.now().plusDays(4).toString());
+	    order.setOrderQuantity(quantity);
+	    order.setOrderStatus(Status.ORDER_CONFIRMED.toString());
+	    order.setUserId(userId);
+	    order.setProductId(productId);
+	    
+	    double gstAmount = product.getPrice() * getGstRateForCategory(product.getCategory());
+	    order.setTotalPrice(price + gstAmount);
+
+	   
+	    String address = user.getAddress() + " , " + user.getCity() + " , " + user.getPincode();
+	    order.setShippingAddress(address);
+
+	    
+	    try {
+	        rt.postForObject("http://localhost:8082/CreateOrder", order, String.class);
+	        model.addAttribute("successMessage", "Order placed successfully!");
+	    } catch (Exception e) {
+	        model.addAttribute("errorMessage", "Error placing order. Please try again.");
+	    }
+
+	    return "redirect:/getallproducts";
+	}
+
 	
 	@PostMapping("/addtocart2/{productId}/{quantity}")
 	public String addToCart2(@PathVariable Long productId,@PathVariable Integer quantity)

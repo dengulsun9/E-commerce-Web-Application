@@ -55,7 +55,7 @@ public class UserDataController {
 		
 	}
 	
-	@DeleteMapping("/user/{userid}")
+	@DeleteMapping("/deleteuser/{userid}")
 	public ResponseEntity<String> deleteUserById(@PathVariable Long userid)
 	{
 		repo.deleteById(userid);
@@ -93,6 +93,8 @@ public class UserDataController {
 		userData2.setCity(userdata.getCity());
 		userData2.setAddress(userdata.getAddress());
 		userData2.setPincode(userdata.getPincode());
+		userData2.setState(userdata.getState());
+		userData2.setCountry(userdata.getCountry());
 		repo.save(userData2);
 		return ResponseEntity.ok("Update Success");
 	}
