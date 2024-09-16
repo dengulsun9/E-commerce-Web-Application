@@ -19,5 +19,5 @@ public class OrderSe {
 	private String shippingAddress;
 	private String productName;
 	private String productImage;
-	
+	private String razorpayOrderId;
 }

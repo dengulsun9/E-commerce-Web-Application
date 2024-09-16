@@ -4,9 +4,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -31,6 +33,13 @@ public class OrderController {
 		return ResponseEntity.ok("Order Create Success");
 	}
 	
+	
+	@PostMapping("/CreateOrder1")
+	public ResponseEntity<Order1> createOrder1(@RequestBody Order1 order)
+	{
+		Order1 save = repo.save(order);
+		return ResponseEntity.ok(save);
+	}
 	
 	@DeleteMapping("/DeleteProduct/{orderId}")
 	public ResponseEntity<String> removeOrder(@PathVariable Long orderId)
@@ -58,6 +67,16 @@ public class OrderController {
 		return ResponseEntity.ok("All Orders Removed Successfully");
 
 	}
+	
+//	 @GetMapping("/getOrderByRazorpayId/{razorPayOrderId}")
+//	    public Order1 getOrderByRazorpayId(@PathVariable String razorPayOrderId) {
+//	        return repo.findByRazorpayOrderId(razorPayOrderId);
+//	    }
+	 
+	 @GetMapping("/getAllOrdersByRazorpayId/{razorPayOrderId}")
+	    public List<Order1> getAllOrdersByRazorpayId(@PathVariable String razorPayOrderId) {
+	        return repo.findByRazorpayOrderId(razorPayOrderId);
+	    }
 	
 	@GetMapping("/order/{orderId}")
 	public Optional<Order1> getOrder(@PathVariable Long orderId)
@@ -101,5 +120,30 @@ public class OrderController {
 		return ResponseEntity.ok("order cancelled");
 	}
 	
-	
+	 @PutMapping("/updateOrder")
+	    public ResponseEntity<String> updateOrder(@RequestBody Order1 updatedOrder) {
+	        try {
+	        	System.out.println("starting updating");
+	        	System.out.println(updatedOrder.toString());
+	        	 Order1 existingOrder = repo.findById(updatedOrder.getOrderId())
+	                     .orElseThrow(() -> new RuntimeException("Order not found"));
+
+	             // Update the fields
+	             existingOrder.setRazorpayOrderId(updatedOrder.getRazorpayOrderId());
+	             existingOrder.setOrderStatus(updatedOrder.getOrderStatus());
+	             existingOrder.setTotalPrice(updatedOrder.getTotalPrice());
+	             existingOrder.setShippingDate(updatedOrder.getShippingDate());
+	             existingOrder.setDeliveryDate(updatedOrder.getDeliveryDate());
+
+	             // Save the updated order back into the database
+	            
+	             repo.save(existingOrder);
+	             
+	             System.out.println("ended updating");
+	            return ResponseEntity.ok("Order updated successfully");
+	        } catch (Exception e) {
+	        	System.err.println(e.getMessage());
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating order");
+	        }
+	    }
 }

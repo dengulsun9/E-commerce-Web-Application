@@ -22,5 +22,6 @@ public class Order1 {
 	private Integer orderQuantity;
 	private Double totalPrice;
 	private String shippingAddress;
+	private String razorpayOrderId;
 	
 }

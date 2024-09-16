@@ -2,7 +2,10 @@ package com.view.controller;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -12,8 +15,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 
+import com.razorpay.Order;
+import com.razorpay.RazorpayClient;
+import com.razorpay.RazorpayException;
 import com.view.misc.Status;
 import com.view.pojo.CartEx;
 import com.view.pojo.LogData;
@@ -34,6 +41,12 @@ public class MicroController {
 
 	RestTemplate rt=new RestTemplate();
 	HttpSession session;
+	
+	@Value("${razorpay.key.id}")
+	private String razorPayKey;
+	
+	@Value("${razorpay.secret.key}")
+	private String razorPaySecret;
 	
 	@GetMapping("/login")
 	public String login(Model model)
@@ -294,15 +307,105 @@ public class MicroController {
 
 	    
 	    try {
-	        rt.postForObject("http://localhost:8082/CreateOrder", order, String.class);
+	        OrderSe createdOrder = rt.postForObject("http://localhost:8082//CreateOrder1", order, OrderSe.class);
+	        order.setOrderId(createdOrder.getOrderId());
+	        
+	        //integreating with razorpay gateway
+	        JSONObject orderReq=new JSONObject();
+	        orderReq.put("amount", (price + gstAmount)*100);
+	        orderReq.put("currency", "INR");
+	        orderReq.put("receipt", user.getUsername());
+	        
+	        
+	        RazorpayClient razorpay = new RazorpayClient(razorPayKey, razorPaySecret);
+	        Order razorpayOrder = razorpay.orders.create(orderReq);
+	        System.out.println(razorpayOrder);
+	        
+	       
+	        
+	        order.setRazorpayOrderId(razorpayOrder.get("id"));
+	        order.setOrderStatus(Status.PAYMENT_PENDING.toString()); // Update to payment pending
+	        rt.put("http://localhost:8082/updateOrder", order);
+	        
+	        model.addAttribute("razorpayKey", razorPayKey);
+	        model.addAttribute("razorpayOrderId", razorpayOrder.get("id"));
+	        model.addAttribute("amount", razorpayOrder.get("amount"));
+	        model.addAttribute("user", user);
+	        model.addAttribute("product", product);
+	        
 	        model.addAttribute("successMessage", "Order placed successfully!");
+	        System.out.println("coming to end");
+	        return "razorpayCheckout";
 	    } catch (Exception e) {
 	        model.addAttribute("errorMessage", "Error placing order. Please try again.");
+	        return "redirect:/getallproducts";
 	    }
 
-	    return "redirect:/getallproducts";
 	}
 
+	
+//	@GetMapping("/handle-payment-callback")
+//	public String handlePaymentCallback(@RequestParam Map<String, String> respPayload, Model model) {
+//	    // Your code here
+//	    String razorPayOrderId = respPayload.get("razorpay_order_id");
+//	    String razorPayPaymentId = respPayload.get("razorpay_payment_id");
+//	    String razorPaySignature = respPayload.get("razorpay_signature");
+//
+//	    try {
+//	        // Verify the signature here using Razorpay SDK (optional, but recommended)
+//	        // If successful, update the order status to "Payment Completed"
+//	        OrderSe order = rt.getForObject("http://localhost:8082/getOrderByRazorpayId/" + razorPayOrderId, OrderSe.class);
+//	        System.out.println(order);
+//	        order.setOrderStatus(Status.ORDER_CONFIRMED.toString());
+//	        rt.put("http://localhost:8082/updateOrder", order);
+//
+//	        model.addAttribute("successMessage", "Payment successful! Your order has been confirmed.");
+//	        return "orderSuccess";  // A success page after payment
+//	    } catch (Exception e) {
+//	        model.addAttribute("errorMessage", "Payment failed. Please try again.");
+//	        System.out.println(e.getMessage());
+//	        return "paymentFailure";  // A failure page after unsuccessful payment
+//	    }
+//	}
+
+	
+	@GetMapping("/handle-payment-callback")
+	public String handlePaymentCallback(@RequestParam Map<String, String> respPayload, Model model) {
+	    String razorPayOrderId = respPayload.get("razorpay_order_id");
+	    String razorPayPaymentId = respPayload.get("razorpay_payment_id");
+	    String razorPaySignature = respPayload.get("razorpay_signature");
+
+	    try {
+	        
+	    	 ResponseEntity<List<OrderSe>> responseEntity = rt.exchange(
+	    	            "http://localhost:8082/getAllOrdersByRazorpayId/" + razorPayOrderId,
+	    	            HttpMethod.GET,
+	    	            null,
+	    	            new ParameterizedTypeReference<List<OrderSe>>() {}
+	    	        );
+	    	        List<OrderSe> orders = responseEntity.getBody();
+	    	        
+	        if (orders != null && !orders.isEmpty()) {
+	           
+	            for (OrderSe order : orders) {
+	                order.setOrderStatus(Status.ORDER_CONFIRMED.toString());
+	                rt.put("http://localhost:8082/updateOrder", order);
+	            }
+
+	            model.addAttribute("successMessage", "Payment successful! All related orders have been confirmed.");
+	            return "orderSuccess"; 
+	        } else {
+	            model.addAttribute("errorMessage", "No orders found with the provided Razorpay order ID.");
+	            return "paymentFailure";  
+	        }
+	    } catch (Exception e) {
+	        model.addAttribute("errorMessage", "Payment failed. Please try again.");
+	        System.out.println(e.getMessage());
+	        return "paymentFailure"; 
+	    }
+	}
+
+	
 	
 	@PostMapping("/addtocart2/{productId}/{quantity}")
 	public String addToCart2(@PathVariable Long productId,@PathVariable Integer quantity)
@@ -342,7 +445,7 @@ public class MicroController {
 	    
 	    model.addAttribute("cartvalue", cartItems);
 	    model.addAttribute("sum", sum);
-	    model.addAttribute("UserName", userId.toString()); // Convert Long to String
+	    model.addAttribute("UserName", userId.toString()); 
 
 	    return "cart";
 	}
@@ -374,35 +477,159 @@ public class MicroController {
 		
 	}
 	
+//	@PostMapping("/createorder")
+//	public String createOrder()
+//	{
+//		CartEx[] forObject = rt.getForObject("http://localhost:8081/getcartbyuid/"+(Long)(session.getAttribute("userId")), CartEx[].class);
+//		for(CartEx ct:forObject)
+//		{
+//			if(ct.getQuantity()==0)
+//			{
+//				rt.delete("http://localhost:8081/removefromcart/"+ct.getCartId());
+//				continue;
+//			}
+//			else
+//			{
+//				OrderSe os=new OrderSe();
+//				os.setDateTime(LocalDate.now().toString());
+//				os.setShippingDate(LocalDate.now().plusDays(2).toString());
+//				os.setDeliveryDate(LocalDate.now().plusDays(4).toString());
+//				os.setOrderQuantity(ct.getQuantity());
+//				os.setOrderStatus(Status.ORDER_CONFIRMED.toString());
+//				os.setUserId((Long)(session.getAttribute("userId")));
+//				os.setProductId(ct.getProductId());
+//				os.setTotalPrice(ct.getTotal());
+//				User ob = rt.getForObject("http://localhost:8081/getbyid/"+os.getUserId(), User.class);
+//				os.setShippingAddress(ob.getAddress()+" , "+ob.getCity()+" , "+ob.getPincode());
+//				rt.postForObject("http://localhost:8082/CreateOrder", os, String.class);	
+//				rt.delete("http://localhost:8081/removefromcart/"+ct.getCartId());
+//			}
+//		}
+//		return "redirect:/getcart";
+//	}
+	
+//	@PostMapping("/createorder")
+//	public String createOrder(Model model) throws Exception
+//	{
+//	    CartEx[] forObject = rt.getForObject("http://localhost:8081/getcartbyuid/"+(Long)(session.getAttribute("userId")), CartEx[].class);
+//	    for(CartEx ct:forObject)
+//	    {
+//	        if(ct.getQuantity()==0)
+//	        {
+//	            rt.delete("http://localhost:8081/removefromcart/"+ct.getCartId());
+//	            continue;
+//	        }
+//	        else
+//	        {
+//	            OrderSe os=new OrderSe();
+//	            os.setDateTime(LocalDate.now().toString());
+//	            os.setShippingDate(LocalDate.now().plusDays(2).toString());
+//	            os.setDeliveryDate(LocalDate.now().plusDays(4).toString());
+//	            os.setOrderQuantity(ct.getQuantity());
+//	            os.setOrderStatus(Status.ORDER_CONFIRMED.toString());
+//	            os.setUserId((Long)(session.getAttribute("userId")));
+//	            os.setProductId(ct.getProductId());
+//	            os.setTotalPrice(ct.getTotal());
+//	            User ob = rt.getForObject("http://localhost:8081/getbyid/"+os.getUserId(), User.class);
+//	            os.setShippingAddress(ob.getAddress()+" , "+ob.getCity()+" , "+ob.getPincode());
+//	            
+//	            // Integrate with Razorpay gateway
+//	            JSONObject orderReq=new JSONObject();
+//	            orderReq.put("amount", os.getTotalPrice()*100);
+//	            orderReq.put("currency", "INR");
+//	            orderReq.put("receipt", ob.getUsername());
+//	            
+//	            RazorpayClient razorpay = new RazorpayClient(razorPayKey, razorPaySecret);
+//	            Order razorpayOrder = razorpay.orders.create(orderReq);
+//	            System.out.println(razorpayOrder);
+//	            
+//	            os.setRazorpayOrderId(razorpayOrder.get("id"));
+//	            os.setOrderStatus(Status.PAYMENT_PENDING.toString()); // Update to payment pending
+//	            
+//	            // Save the order with Razorpay order ID
+//	            rt.postForObject("http://localhost:8082/CreateOrder", os, String.class);
+//	            
+//	            // Add attributes to the model for Razorpay checkout
+//	            model.addAttribute("razorpayKey", razorPayKey);
+//	            model.addAttribute("razorpayOrderId", razorpayOrder.get("id"));
+//	            model.addAttribute("amount", razorpayOrder.get("amount"));
+//	            model.addAttribute("user", ob);
+//	            model.addAttribute("product", ct);
+//	            
+//	            model.addAttribute("successMessage", "Order placed successfully!");
+//	            System.out.println("coming to end");
+//	            return "razorpayCheckout";
+//	        }
+//	    }
+//	    return "redirect:/getcart";
+//	}
+	
+	
 	@PostMapping("/createorder")
-	public String createOrder()
+	public String createOrder(Model model) throws Exception
 	{
-		CartEx[] forObject = rt.getForObject("http://localhost:8081/getcartbyuid/"+(Long)(session.getAttribute("userId")), CartEx[].class);
-		for(CartEx ct:forObject)
-		{
-			if(ct.getQuantity()==0)
-			{
-				rt.delete("http://localhost:8081/removefromcart/"+ct.getCartId());
-				continue;
-			}
-			else
-			{
-				OrderSe os=new OrderSe();
-				os.setDateTime(LocalDate.now().toString());
-				os.setShippingDate(LocalDate.now().plusDays(2).toString());
-				os.setDeliveryDate(LocalDate.now().plusDays(4).toString());
-				os.setOrderQuantity(ct.getQuantity());
-				os.setOrderStatus(Status.ORDER_CONFIRMED.toString());
-				os.setUserId((Long)(session.getAttribute("userId")));
-				os.setProductId(ct.getProductId());
-				os.setTotalPrice(ct.getTotal());
-				User ob = rt.getForObject("http://localhost:8081/getbyid/"+os.getUserId(), User.class);
-				os.setShippingAddress(ob.getAddress()+" , "+ob.getCity()+" , "+ob.getPincode());
-				rt.postForObject("http://localhost:8082/CreateOrder", os, String.class);	
-				rt.delete("http://localhost:8081/removefromcart/"+ct.getCartId());
-			}
-		}
-		return "redirect:/getcart";
+	    CartEx[] forObject = rt.getForObject("http://localhost:8081/getcartbyuid/"+(Long)(session.getAttribute("userId")), CartEx[].class);
+	    double totalAmount = 0;
+	    for(CartEx ct:forObject)
+	    {
+	        if(ct.getQuantity()==0)
+	        {
+	            rt.delete("http://localhost:8081/removefromcart/"+ct.getCartId());
+	            continue;
+	        }
+	        else
+	        {
+	            OrderSe os=new OrderSe();
+	            os.setDateTime(LocalDate.now().toString());
+	            os.setShippingDate(LocalDate.now().plusDays(2).toString());
+	            os.setDeliveryDate(LocalDate.now().plusDays(4).toString());
+	            os.setOrderQuantity(ct.getQuantity());
+	            os.setOrderStatus(Status.PAYMENT_PENDING.toString());
+	            os.setUserId((Long)(session.getAttribute("userId")));
+	            os.setProductId(ct.getProductId());
+	            os.setTotalPrice(ct.getTotal());
+	            totalAmount += ct.getTotal();
+	            User ob = rt.getForObject("http://localhost:8081/getbyid/"+os.getUserId(), User.class);
+	            os.setShippingAddress(ob.getAddress()+" , "+ob.getCity()+" , "+ob.getPincode());
+	            
+	            // Integrate with Razorpay gateway
+	            rt.postForObject("http://localhost:8082/CreateOrder", os, String.class);
+	            rt.delete("http://localhost:8081/removefromcart/"+ct.getCartId());
+	        }
+	    }
+	    
+	    
+	    JSONObject orderReq=new JSONObject();
+	    orderReq.put("amount", totalAmount*100);
+	    orderReq.put("currency", "INR");
+	    User user = rt.getForObject("http://localhost:8081/getbyid/"+(Long)(session.getAttribute("userId")), User.class);
+	    orderReq.put("receipt", user.getUsername());
+	    
+	    RazorpayClient razorpay = new RazorpayClient(razorPayKey, razorPaySecret);
+	    Order razorpayOrder = razorpay.orders.create(orderReq);
+	    String razorPayOrderId = razorpayOrder.get("id"); 
+
+	    model.addAttribute("razorpayKey", razorPayKey);
+	    model.addAttribute("razorpayOrderId", razorPayOrderId); 
+	    model.addAttribute("amount", razorpayOrder.get("amount"));
+	    model.addAttribute("user", user);
+	    
+	
+	    OrderSe existingOrder[] = rt.getForObject("http://localhost:8082/getorderbyuid/" + (Long)(session.getAttribute("userId")), OrderSe[].class);
+
+	    for(OrderSe order:existingOrder)
+	    {
+	    	order.setRazorpayOrderId(razorpayOrder.get("id"));
+	    	 
+		    rt.put("http://localhost:8082/updateOrder", order);
+	    }
+	    
+
+	   
+	    
+	    model.addAttribute("successMessage", "Order placed successfully!");
+	  //  System.out.println("razorpayOrder id is : "+razorPayOrderId);
+	    return "razorpayCheckout";
 	}
 	
 	
@@ -418,9 +645,11 @@ public class MicroController {
 			OrderSe[] ob = rt.getForObject("http://localhost:8082/getorderbyuid/"+(Long)(session.getAttribute("userId")), OrderSe[].class);
 			for(OrderSe x:ob)
 			{
+//				System.out.println(x.getProductId());
+//				System.out.println("----");
 				x.setProductName(rt.getForEntity("http://localhost:8082/getname/"+x.getProductId(), String.class).getBody());
 				x.setProductImage(rt.getForEntity("http://localhost:8082/getimage/"+x.getProductId(), String.class).getBody());
-			}
+			} 
 			model.addAttribute("order", ob);
 			model.addAttribute("UserName", (String)(session.getAttribute("userName")));
 			

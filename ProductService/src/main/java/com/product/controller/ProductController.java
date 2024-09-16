@@ -93,7 +93,6 @@ public class ProductController {
 	public String getProductName(@PathVariable Long productId)
 	{
 		String productName = repo.findById(productId).get().getProductName();
-		System.out.println(productName);
 		return productName;
 		//return repo.findById(productId).get().getProductName();
 	}

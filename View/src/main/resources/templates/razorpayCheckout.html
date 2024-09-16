@@ -1,0 +1,39 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Checkout with Razorpay</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+    <h1>Processing Payment for Order</h1>
+
+    <script>
+        var options = {
+            "key": "[[${razorpayKey}]]", // Pass Razorpay key from backend
+            "amount": "[[${amount}]]",   // Total amount
+            "currency": "INR",
+            "name": "[[${user.username}]]",
+            "description": "Order Payment",
+            "order_id": "[[${razorpayOrderId}]]",  // Razorpay order id from backend
+            "handler": function (response){
+                console.log(response);
+                // After payment, make a POST request to the backend to confirm the payment
+                window.location.href = "/handle-payment-callback?" +
+                                       "razorpay_order_id=" + response.razorpay_order_id +
+                                       "&razorpay_payment_id=" + response.razorpay_payment_id +
+                                       "&razorpay_signature=" + response.razorpay_signature;
+            },
+            "prefill": {
+                "name": "[[${user.username}]]"
+            },
+            "theme": {
+                "color": "#3399cc"
+            }
+        };
+        var rzp1 = new Razorpay(options);
+        rzp1.open();
+    </script>
+</body>
+</html>
